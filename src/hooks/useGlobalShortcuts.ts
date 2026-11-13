@@ -16,11 +16,12 @@ import {
   startClip,
 } from '../store/actions';
 import { getState, selectedId, setState } from '../store/appStore';
+import { redo, undo } from '../store/history';
 import { fitAll, toWorld, viewportRect, zoomCenter } from '../store/viewActions';
 
 const isTyping = (t: EventTarget | null) => t instanceof Element && !!t.closest('input,textarea,select');
 
-/** Keyboard shortcuts (V, H, N, R, +, -, Shift+1, ⌘X, Delete, Esc, Space-to-pan) and pasting images. */
+/** Keyboard shortcuts (V, H, N, R, +, -, Shift+1, ⌘Z, ⇧⌘Z, ⌘X, Delete, Esc, Space-to-pan) and pasting images. */
 export function useGlobalShortcuts(): void {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -42,6 +43,14 @@ export function useGlobalShortcuts(): void {
         return;
       }
       if (e.metaKey || e.ctrlKey) {
+        // ⌘Z / Ctrl+Z undoes; ⇧⌘Z / Ctrl+Shift+Z / Ctrl+Y redoes. Inside a text field the field's own undo runs.
+        const key = e.key.toLowerCase();
+        if (key === 'z' || (key === 'y' && e.ctrlKey)) {
+          e.preventDefault();
+          if (key === 'y' || e.shiftKey) redo();
+          else undo();
+          return;
+        }
         // ⌘X / Ctrl+X on the selected card cuts its photo out (the card itself stays).
         const { drawer } = getState();
         if (e.key.toLowerCase() === 'x' && drawer?.type === 'item' && drawer.id) {

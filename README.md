@@ -89,5 +89,7 @@ Proje adresi ve yayınlanabilir (publishable) anahtar `.env` dosyasındadır; ik
 | `Shift + 1`                                     | Tümünü göster                                                   |
 | `+` / `-`                                       | Yakınlaştır / uzaklaştır                                        |
 | `⌘ / Ctrl + X`, sağ tık ya da çift tık (kartta) | Eşyanın fotoğrafını küpür olarak kes; tıkladığın yere bırakılır |
+| `⌘ / Ctrl + Z`                                  | Geri al                                                         |
+| `⇧ ⌘ Z`, `Ctrl + Shift + Z` ya da `Ctrl + Y`    | Yinele                                                          |
 | `Delete`                                        | Seçili eşyayı ya da küpürü sil                                  |
 | `Esc`                                           | Seçimi bırak, küpür bırakmaktan vazgeç                          |
