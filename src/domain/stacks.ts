@@ -65,7 +65,7 @@ export function cycleStack(board: Board, id: string, dir: 1 | -1): void {
   else board.items[st.ids[st.ids.length - 1]].so = Math.min(...sos) - 1;
 }
 
-export type StackUndo = Map<string, Pick<Item, 'x' | 'y' | 'stack' | 'so'>>;
+export type StackUndo = Map<string, Pick<Item, 'x' | 'y' | 'room' | 'stack' | 'so'>>;
 
 /** Drops `ids` onto `targetId`'s stack. Returns the previous state of every touched card and the new size. */
 export function joinStack(
@@ -81,7 +81,7 @@ export function joinStack(
   const before: StackUndo = new Map();
   for (const i of [...members, ...dragged]) {
     const it = board.items[i];
-    before.set(i, { x: it.x, y: it.y, stack: it.stack || '', so: it.so || 0 });
+    before.set(i, { x: it.x, y: it.y, room: it.room, stack: it.stack || '', so: it.so || 0 });
   }
   let min = Math.min(...members.map((i) => so(board, i)));
   for (const i of members) board.items[i].stack = sid;
@@ -93,6 +93,7 @@ export function joinStack(
       it.so = --min;
       it.x = t.x;
       it.y = t.y;
+      it.room = t.room;
     });
   return { before, size: members.length + dragged.length };
 }

@@ -1,5 +1,6 @@
 import { emptyBoard } from '../domain/board';
 import { STATUS } from '../domain/constants';
+import { roomAt } from '../domain/geometry';
 import type { Board, Item } from '../domain/types';
 
 /*
@@ -47,12 +48,16 @@ function migrateItem(it: Item): Item {
 }
 
 function toBoard(d: RawBoard): Board {
-  return {
+  const board: Board = {
     groups: { ...(d.groups || {}) },
     items: Object.fromEntries(Object.entries(d.items || {}).map(([id, it]) => [id, migrateItem(it)])),
     clips: { ...(d.clips || {}) },
     meta: { budget: 0, ...(d.meta || {}) },
   };
+  // Older boards did not store a card's room: it was whichever room the card was drawn in.
+  for (const it of Object.values(board.items))
+    if (typeof it.room !== 'string') it.room = roomAt(board, it) || '';
+  return board;
 }
 
 /** Saved board from this browser, else the bundled seed (which is then saved), else an empty board. */

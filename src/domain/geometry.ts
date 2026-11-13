@@ -13,8 +13,11 @@ const anchorInside = (it: Pick<Item, 'x' | 'y'>, g: Board['groups'][string]): bo
   return cx >= g.x && cx <= g.x + g.w && cy >= g.y && cy <= g.y + g.h;
 };
 
-/** The smallest room containing the card's anchor point, or null. */
-export function roomOf(board: Board, it: Pick<Item, 'x' | 'y'>): string | null {
+/**
+ * The smallest room under the card's anchor point, or null. This is only where the card is drawn;
+ * which room it belongs to is `item.room`.
+ */
+export function roomAt(board: Board, it: Pick<Item, 'x' | 'y'>): string | null {
   let best: string | null = null;
   let area = Infinity;
   for (const [id, g] of Object.entries(board.groups)) {
@@ -29,13 +32,31 @@ export function roomOf(board: Board, it: Pick<Item, 'x' | 'y'>): string | null {
   return best;
 }
 
-/** Every card whose anchor point lies inside the room (including nested rooms). */
-export function itemsIn(board: Board, gid: string): string[] {
+/** The cards that belong to the room. */
+export function membersOf(board: Board, gid: string): string[] {
+  return Object.keys(board.items).filter((id) => board.items[id].room === gid);
+}
+
+/** The room a card belongs to, when that room still exists. */
+export const roomOf = (board: Board, it: Pick<Item, 'room'>): string | null =>
+  it.room && board.groups[it.room] ? it.room : null;
+
+/** A card (or stack, `ids`) the user put down joins the room it was put in, or none. */
+export function assignRoom(board: Board, ids: Iterable<string>, leadId: string): void {
+  const lead = board.items[leadId];
+  if (!lead) return;
+  const gid = roomAt(board, lead) || '';
+  for (const i of ids) if (board.items[i]) board.items[i].room = gid;
+}
+
+/**
+ * Cards without a room that now lie inside the room join it (after the room was drawn, moved or grown
+ * around them). Cards of another room are never taken.
+ */
+export function adoptLooseCards(board: Board, gid: string): void {
   const g = board.groups[gid];
-  if (!g) return [];
-  return Object.entries(board.items)
-    .filter(([, it]) => anchorInside(it, g))
-    .map(([id]) => id);
+  if (!g) return;
+  for (const it of Object.values(board.items)) if (!roomOf(board, it) && anchorInside(it, g)) it.room = gid;
 }
 
 const columnsOf = (w: number) => Math.max(1, Math.floor((w - PAD * 2 + GAP) / (CARD_W + GAP)));
@@ -194,7 +215,7 @@ export function roomMinSize(board: Board, gid: string): { w: number; h: number }
   const boxes = cardBoxes(board);
   for (const [id, it] of Object.entries(board.items)) {
     const b = boxes.get(id);
-    if (!b || roomOf(board, it) !== gid) continue;
+    if (!b || it.room !== gid) continue;
     // A card that already pokes out (older boards) must not make the room jump bigger.
     w = Math.max(w, Math.min(b.x + b.w + PAD - g.x, g.w));
     h = Math.max(h, Math.min(b.y + b.h + PAD - g.y, g.h));

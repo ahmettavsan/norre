@@ -326,7 +326,7 @@ export function buildTemplate(board: Board): void {
       const fid = createItem(board, ix, iy, { ...toItem(sample), ...(sample.alt ? { so: 0 } : {}) });
       if (sample.alt) {
         board.items[fid].stack = fid;
-        createItem(board, ix, iy, { ...toItem(sample.alt), stack: fid, so: 1 });
+        createItem(board, ix, iy, { ...toItem(sample.alt), room: board.items[fid].room, stack: fid, so: 1 });
       }
     });
     colY[col] += h + 90;

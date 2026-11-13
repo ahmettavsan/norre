@@ -4,6 +4,7 @@ import {
   addAlternative,
   createGroup,
   createItem,
+  deleteGroup,
   deleteItem,
   detachFromStack,
   emptyBoard,
@@ -12,12 +13,16 @@ import {
 import { CARD_H, CARD_W, GAP, HEAD, MIN_GAP, PAD } from './constants';
 import { parseNum, total } from './format';
 import {
+  adoptLooseCards,
+  assignRoom,
   bounds,
   cardBoxes,
   clampRoomSize,
   clipBounds,
   freeSlot,
+  membersOf,
   resizeLimits,
+  roomAt,
   roomMinSize,
   roomOf,
   settleCard,
@@ -51,8 +56,8 @@ describe('geometry', () => {
       createGroup(d, 0, 0, 2000, 2000, 'Ev');
       small = createGroup(d, 100, 100, 600, 400, 'Salon');
     });
-    expect(roomOf(b, { x: 150, y: 250 })).toBe(small);
-    expect(roomOf(b, { x: 5000, y: 5000 })).toBeNull();
+    expect(roomAt(b, { x: 150, y: 250 })).toBe(small);
+    expect(roomAt(b, { x: 5000, y: 5000 })).toBeNull();
   });
 
   it('pushes a card dropped on the room title below the header', () => {
@@ -163,6 +168,77 @@ describe('cut-outs', () => {
   });
 });
 
+describe('room membership', () => {
+  /** Two rooms side by side with one card each. */
+  const twoRooms = () => {
+    const ids = { a: '', b: '', cardA: '', cardB: '' };
+    const board = boardWith((d) => {
+      ids.a = createGroup(d, 0, 0, 700, 500);
+      ids.b = createGroup(d, 1000, 0, 700, 500);
+      ids.cardA = createItem(d, PAD, HEAD + PAD);
+      ids.cardB = createItem(d, 1000 + PAD, HEAD + PAD);
+    });
+    return { board, ...ids };
+  };
+
+  it('gives a new card the room it was created in', () => {
+    const { board, a, b, cardA, cardB } = twoRooms();
+    expect(board.items[cardA].room).toBe(a);
+    expect(board.items[cardB].room).toBe(b);
+  });
+
+  it('does not take the cards of a room another room is moved over', () => {
+    const { board, a, b, cardA, cardB } = twoRooms();
+    const moved = produce(board, (d) => {
+      // What dragging room B onto room A does: B and its own cards move, then loose cards are adopted.
+      for (const id of membersOf(d, b)) d.items[id].x -= 1000;
+      d.groups[b].x = 0;
+      adoptLooseCards(d, b);
+    });
+    expect(moved.items[cardA].room).toBe(a);
+    expect(moved.items[cardB].room).toBe(b);
+    expect(membersOf(moved, b)).toEqual([cardB]);
+    expect(boardStats(moved).rooms.get(a)!.n).toBe(1);
+  });
+
+  it('adopts loose cards when a room is drawn around them', () => {
+    const { board, a, cardA } = twoRooms();
+    let loose = '';
+    let big = '';
+    const s = produce(board, (d) => {
+      loose = createItem(d, 2000, 0);
+      big = createGroup(d, -100, -100, 2500, 800);
+      adoptLooseCards(d, big);
+    });
+    expect(s.items[loose].room).toBe(big);
+    expect(s.items[cardA].room).toBe(a);
+  });
+
+  it('moves a dropped card into the room it lands in', () => {
+    const { board, b, cardA } = twoRooms();
+    const s = produce(board, (d) => {
+      d.items[cardA].x += 1000;
+      assignRoom(d, [cardA], cardA);
+    });
+    expect(s.items[cardA].room).toBe(b);
+  });
+
+  it('hands the cards of a deleted room to the room around it, or to none', () => {
+    let outer = '';
+    let inner = '';
+    let card = '';
+    const b = boardWith((d) => {
+      outer = createGroup(d, 0, 0, 2000, 2000, 'Ev');
+      inner = createGroup(d, 100, 100, 700, 500, 'Salon');
+      card = createItem(d, 100 + PAD, 100 + HEAD + PAD);
+    });
+    expect(b.items[card].room).toBe(inner);
+    const s = produce(b, (d) => deleteGroup(d, inner));
+    expect(s.items[card].room).toBe(outer);
+    expect(produce(s, (d) => deleteGroup(d, outer)).items[card].room).toBe('');
+  });
+});
+
 describe('room resizing', () => {
   it('cannot shrink a room past its cards', () => {
     let gid = '';
@@ -218,7 +294,8 @@ describe('room resizing', () => {
     const grown = produce(b, (d) => {
       Object.assign(d.groups[a], size);
     });
-    expect(roomOf(grown, grown.items[card])).toBe(other);
+    expect(roomAt(grown, grown.items[card])).toBe(other);
+    expect(grown.items[card].room).toBe(other);
   });
 
   it('ignores rooms that already overlapped before the resize', () => {
@@ -354,7 +431,10 @@ describe('template and tidy', () => {
   it('places every sample card inside its room without touching another card', () => {
     const b = boardWith(buildTemplate);
     const boxes = [...cardBoxes(b)];
-    for (const it of Object.values(b.items)) expect(roomOf(b, it)).not.toBeNull();
+    for (const it of Object.values(b.items)) {
+      expect(it.room).not.toBe('');
+      expect(roomAt(b, it)).toBe(it.room);
+    }
     for (const [i, p] of boxes) {
       for (const [j, q] of boxes) {
         if (i >= j || (b.items[i].stack && b.items[i].stack === b.items[j].stack)) continue;
@@ -366,13 +446,16 @@ describe('template and tidy', () => {
 
   it('keeps every card in its room when tidying and can be undone exactly', () => {
     const b = boardWith(buildTemplate);
-    const rooms = Object.fromEntries(Object.entries(b.items).map(([id, it]) => [id, roomOf(b, it)]));
+    const rooms = Object.fromEntries(Object.entries(b.items).map(([id, it]) => [id, it.room]));
     const snap = layoutSnapshot(b);
     const t = produce(b, (d) => {
       d.items[Object.keys(d.items)[0]].x += 37; // something to tidy
       tidy(d);
     });
-    for (const [id, it] of Object.entries(t.items)) expect(roomOf(t, it)).toBe(rooms[id]);
+    for (const [id, it] of Object.entries(t.items)) {
+      expect(it.room).toBe(rooms[id]);
+      expect(roomAt(t, it)).toBe(rooms[id]);
+    }
     const undone = produce(t, (d) => restoreLayout(d, snap));
     expect(layoutSnapshot(undone)).toEqual(snap);
   });

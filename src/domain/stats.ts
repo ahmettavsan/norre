@@ -1,4 +1,4 @@
-import { itemsIn, roomOf } from './geometry';
+import { membersOf, roomOf } from './geometry';
 import { reps } from './stacks';
 import { total } from './format';
 import type { Board, Filter, Group, Item } from './types';
@@ -79,11 +79,11 @@ export interface RoomSummary {
   spent: number;
 }
 
-/** Summary panel rows. Unlike `boardStats`, a card counts for every room that contains it. */
+/** Summary panel rows, one per room, counting the cards that belong to it. */
 export function roomSummaries(board: Board): RoomSummary[] {
   const repSet = new Set(reps(board).map((r) => r[0]));
   return Object.entries(board.groups).map(([id, g]) => {
-    const ids = itemsIn(board, id).filter((i) => repSet.has(i));
+    const ids = membersOf(board, id).filter((i) => repSet.has(i));
     let n = 0;
     let done = 0;
     let sum = 0;

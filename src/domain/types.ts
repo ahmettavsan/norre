@@ -25,6 +25,11 @@ export interface Item {
   installments?: number;
   /** First installment date, YYYY-MM-DD. */
   firstInstallment?: string;
+  /**
+   * Id of the room the card belongs to ('' = none). Set when the card is created, dropped, moved with the
+   * room picker or its room is deleted; a room moving or growing over a card never changes it.
+   */
+  room: string;
   x: number;
   y: number;
   createdAt: number;

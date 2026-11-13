@@ -44,6 +44,15 @@ describe('saved boards', () => {
     expect(loadInitialBoard().items.a.name).toBe('Koltuk');
   });
 
+  it('links the cards of older boards to the room they are drawn in', () => {
+    const board = loadSaved({
+      groups: { r: { name: 'Salon', color: '#f00', x: 0, y: 0, w: 600, h: 400 } },
+      items: { a: { name: 'Koltuk', x: 20, y: 120 }, b: { name: 'Halı', x: 900, y: 0 } },
+    });
+    expect(board.items.a.room).toBe('r');
+    expect(board.items.b.room).toBe('');
+  });
+
   it('loads boards saved before cut-outs existed', () => {
     expect(loadSaved({ groups: {}, items: {} }).clips).toEqual({});
   });

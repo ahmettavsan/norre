@@ -1,6 +1,6 @@
 import { CARD_W, CHIPS, GAP } from './constants';
 import { uid } from './format';
-import { bounds, freeSlot, roomOf, settleCard } from './geometry';
+import { assignRoom, bounds, freeSlot, roomAt, roomOf, settleCard } from './geometry';
 import { settleStack, stackOf } from './stacks';
 import type { Board, Item } from './types';
 
@@ -21,13 +21,18 @@ export function createItem(board: Board, x: number, y: number, extra: Partial<It
     status: 'todo',
     delivery: '',
     deliveryDate: '',
+    room: '',
     x: Math.round(x),
     y: Math.round(y),
     createdAt: Date.now(),
     ...extra,
   };
-  // A new alternative shares its stack's spot on purpose; every other new card gets a clear spot.
-  if (!extra.stack) settleCard(board, [id], id);
+  // A new alternative shares its stack's spot (and room) on purpose; every other new card joins the room
+  // it was created in and gets a clear spot there.
+  if (!extra.stack) {
+    if (extra.room === undefined) assignRoom(board, [id], id);
+    settleCard(board, [id], id);
+  }
   return id;
 }
 
@@ -74,6 +79,7 @@ export function addAlternative(board: Board, id: string): string | null {
     name: it.name,
     priority: it.priority || 'normal',
     qty: it.qty || 1,
+    room: it.room,
     stack: sid,
     so: min - 1,
   });
@@ -107,5 +113,12 @@ export function moveToRoom(board: Board, id: string, gid: string): void {
   for (const i of stackOf(board, id)?.ids || [id]) {
     board.items[i].x = p.x;
     board.items[i].y = p.y;
+    board.items[i].room = gid;
   }
+}
+
+/** Deletes a room but keeps its cards: they join the room they are drawn in (a bigger one around it), or none. */
+export function deleteGroup(board: Board, gid: string): void {
+  delete board.groups[gid];
+  for (const it of Object.values(board.items)) if (it.room === gid) it.room = roomAt(board, it) || '';
 }

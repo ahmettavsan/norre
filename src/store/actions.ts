@@ -1,6 +1,6 @@
 import * as B from '../domain/board';
 import { CARD_H, CARD_W, DELIVERY_ORDER, STATUS_ORDER } from '../domain/constants';
-import { freeSlot } from '../domain/geometry';
+import { adoptLooseCards, freeSlot } from '../domain/geometry';
 import { layoutSnapshot, restoreLayout, tidy, type LayoutSnapshot } from '../domain/layout';
 import * as St from '../domain/stacks';
 import { safeImg, uid } from '../domain/format';
@@ -80,6 +80,7 @@ export function createGroupAt(x: number, y: number, w: number, h: number): strin
   let id = '';
   updateBoard((b) => {
     id = B.createGroup(b, x, y, w, h);
+    adoptLooseCards(b, id);
   });
   return id;
 }
@@ -361,9 +362,7 @@ export function updateGroup(id: string, patch: Partial<Group>): void {
 }
 
 export function removeGroup(id: string): void {
-  updateBoard((b) => {
-    delete b.groups[id];
-  });
+  updateBoard((b) => B.deleteGroup(b, id));
 }
 
 export function setBudget(budget: number): void {

@@ -1,7 +1,15 @@
 import { useEffect, type RefObject } from 'react';
 import { CARD_H, CARD_W, GAP, HEAD, PAD, ZOOM_MAX, ZOOM_MIN } from '../domain/constants';
 import { clamp } from '../domain/format';
-import { clampRoomSize, itemsIn, resizeLimits, settleCard, type ResizeLimits } from '../domain/geometry';
+import {
+  adoptLooseCards,
+  assignRoom,
+  clampRoomSize,
+  membersOf,
+  resizeLimits,
+  settleCard,
+  type ResizeLimits,
+} from '../domain/geometry';
 import { stackMap, stackOf } from '../domain/stacks';
 import type { Board, Clip, View } from '../domain/types';
 import {
@@ -189,7 +197,8 @@ export function useCanvasGestures(ref: RefObject<HTMLElement | null>): void {
               limits: resizeLimits(board, gid),
             };
           } else {
-            const inside = itemsIn(board, gid);
+            // Only the room's own cards travel with it, never the cards of a room it passes over.
+            const inside = membersOf(board, gid);
             const orig = new Map<string, Pos>([[gid, { x: g.x, y: g.y }]]);
             for (const i of inside) orig.set(i, { x: board.items[i].x, y: board.items[i].y });
             drag = { ...base, kind: 'group', id: gid, ids: new Set([gid, ...inside]), orig };
@@ -359,10 +368,13 @@ export function useCanvasGestures(ref: RefObject<HTMLElement | null>): void {
           else {
             let settled = false;
             updateBoard((b) => {
+              assignRoom(b, d.ids, d.id);
               settled = settleCard(b, d.ids, d.id);
             });
             if (settled) animateLayout();
           }
+        } else if (d.moved && (d.kind === 'group' || d.kind === 'resize')) {
+          updateBoard((b) => adoptLooseCards(b, d.id));
         }
         if (!d.moved && !cancelled) {
           if (d.kind === 'item' && d.compare && stackOf(getState().board, d.id)) openCompare(d.id);
