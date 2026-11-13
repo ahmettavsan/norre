@@ -11,10 +11,10 @@
     "format": "prettier --write .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "sample": "vite-node scripts/build-sample-board.ts"
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "immer": "^10.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -35,7 +35,6 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5",
-    "vite-node": "^3.2.4",
     "vitest": "^3.2.7"
   }
 }

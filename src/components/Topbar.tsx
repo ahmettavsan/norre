@@ -1,6 +1,7 @@
 import type { Tool } from '../domain/types';
 import { setTool, tidyAll, toggleSummary } from '../store/actions';
 import { useAppStore } from '../store/appStore';
+import { AccountMenu } from './AccountMenu';
 
 function ToolButton({
   tool,
@@ -29,6 +30,18 @@ function ToolButton({
   );
 }
 
+const SAVE_LABEL = {
+  saved: 'Kaydedildi',
+  saving: 'Kaydediliyor…',
+  error: 'Kaydedilemedi, tekrar denenecek',
+};
+
+/** A small dot next to the name: green once the board is saved, grey while saving, red when it failed. */
+function SaveStatus() {
+  const status = useAppStore((s) => s.saveStatus);
+  return <span className={'sync ' + status} title={SAVE_LABEL[status]} aria-label={SAVE_LABEL[status]} />;
+}
+
 export function Topbar() {
   return (
     <header className="topbar">
@@ -47,7 +60,7 @@ export function Topbar() {
           <path d="M9.5 20v-5.5h5V20" />
         </svg>
         <span className="title">norre</span>
-        <span className="sync" title="Bu cihazda saklanıyor" />
+        <SaveStatus />
       </div>
       <div className="tb-center" role="toolbar" aria-label="Araçlar">
         <ToolButton tool="select" title="Seç ve taşı (V)" label="Seç">
@@ -109,6 +122,7 @@ export function Topbar() {
             <path d="M12 3.5V12l6 6" />
           </svg>
         </button>
+        <AccountMenu />
       </div>
     </header>
   );

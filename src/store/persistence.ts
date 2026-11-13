@@ -1,24 +1,15 @@
-import { emptyBoard } from '../domain/board';
 import { STATUS } from '../domain/constants';
 import { roomAt } from '../domain/geometry';
 import type { Board, Item } from '../domain/types';
 
 /*
- * All browser storage lives here. To move the board to a backend (Firebase, Supabase…),
- * replace `loadInitialBoard` / `saveBoard` and keep the rest of the app untouched.
+ * Shape checks and migrations for saved boards, the board this browser kept before accounts existed,
+ * and small per-browser preferences. The account's board itself is saved by store/cloud.ts.
  */
 
-const LS_KEY = 'norre-board-v1';
-/** Where the board was saved while the app was called Yuvamız; read once if there is no new save. */
-const OLD_LS_KEY = 'yuvamiz-board-v1';
+/** Where this browser kept the board before accounts (under both of the app's names). */
+const LOCAL_KEYS = ['norre-board-v1', 'yuvamiz-board-v1'];
 const PREF_HIDE_UNMATCHED = 'norre-hide';
-
-declare global {
-  interface Window {
-    /** Optional seed board injected by public/seed-board.js. */
-    NORRE_SEED?: unknown;
-  }
-}
 
 interface RawBoard {
   groups?: Board['groups'];
@@ -47,6 +38,11 @@ function migrateItem(it: Item): Item {
   return out as unknown as Item;
 }
 
+/** A saved board in its current shape: renamed values converted, missing fields filled in. */
+export function normalizeBoard(raw: unknown): Board {
+  return toBoard(isRawBoard(raw) ? raw : {});
+}
+
 function toBoard(d: RawBoard): Board {
   const board: Board = {
     groups: { ...(d.groups || {}) },
@@ -60,41 +56,23 @@ function toBoard(d: RawBoard): Board {
   return board;
 }
 
-/** Saved board from this browser, else the bundled seed (which is then saved), else an empty board. */
-export function loadInitialBoard(): Board {
+/** The board this browser kept before accounts existed, if any, to bring into the user's account. */
+export function takeLocalBoard(): Board | null {
   try {
-    const raw = localStorage.getItem(LS_KEY) ?? localStorage.getItem(OLD_LS_KEY);
-    const d: unknown = raw ? JSON.parse(raw) : window.NORRE_SEED || null;
-    if (!isRawBoard(d)) return emptyBoard();
-    const board = toBoard(d);
-    if (!raw) saveBoard(board);
-    return board;
+    const raw = LOCAL_KEYS.map((k) => localStorage.getItem(k)).find(Boolean);
+    return raw ? normalizeBoard(JSON.parse(raw)) : null;
   } catch {
-    return emptyBoard();
+    return null;
   }
 }
 
-export function saveBoard(board: Board): void {
+/** Forgets the pre-account board once it is safely in an account. */
+export function clearLocalBoard(): void {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(board));
+    for (const k of LOCAL_KEYS) localStorage.removeItem(k);
   } catch {
-    /* storage unavailable: keep in memory */
+    /* ignore */
   }
-}
-
-let saveTimer: ReturnType<typeof setTimeout> | undefined;
-let pending: Board | null = null;
-
-export function saveBoardSoon(board: Board): void {
-  pending = board;
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(flushBoardSave, 300);
-}
-
-export function flushBoardSave(): void {
-  clearTimeout(saveTimer);
-  if (pending) saveBoard(pending);
-  pending = null;
 }
 
 export function readPrefs(): { hideUnmatched: boolean } {

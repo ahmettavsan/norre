@@ -1,7 +1,8 @@
 import { produce } from 'immer';
 import { create } from 'zustand';
 import type { Board, Filter, Rect, Tool, View } from '../domain/types';
-import { flushBoardSave, loadInitialBoard, readPrefs, saveBoardSoon } from './persistence';
+import { emptyBoard } from '../domain/board';
+import { readPrefs } from './persistence';
 
 export type DrawerType = 'item' | 'group' | 'summary';
 
@@ -20,7 +21,20 @@ export interface ToastState {
   seq: number;
 }
 
+export interface User {
+  id: string;
+  email: string;
+}
+
 export interface AppState {
+  /** 'loading' until Supabase has told us whether someone is signed in. */
+  authStatus: 'loading' | 'signedOut' | 'signedIn';
+  user: User | null;
+  /** The user came back from a password reset email and has to choose a new password. */
+  recovery: boolean;
+  /** The signed-in user's board: being fetched, on screen, or failed to load. */
+  boardStatus: 'idle' | 'loading' | 'ready' | 'error';
+  saveStatus: 'saved' | 'saving' | 'error';
   board: Board;
   view: View;
   tool: Tool;
@@ -55,7 +69,12 @@ export interface AppState {
 const prefs = readPrefs();
 
 export const useAppStore = create<AppState>()(() => ({
-  board: loadInitialBoard(),
+  authStatus: 'loading',
+  user: null,
+  recovery: false,
+  boardStatus: 'idle',
+  saveStatus: 'saved',
+  board: emptyBoard(),
   view: { x: 40, y: 40, k: 1 },
   tool: 'select',
   filter: 'all',
@@ -101,9 +120,3 @@ export function updateBoard(recipe: (board: Board) => void): void {
 /** Selected item or room: whatever the inspector shows. */
 export const selectedId = (s: AppState): string | null =>
   s.drawer && (s.drawer.type === 'item' || s.drawer.type === 'group') ? s.drawer.id : null;
-
-// Persist board changes to this browser.
-useAppStore.subscribe((s, prev) => {
-  if (s.board !== prev.board) saveBoardSoon(s.board);
-});
-if (typeof window !== 'undefined') window.addEventListener('pagehide', flushBoardSave);

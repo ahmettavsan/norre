@@ -3,7 +3,7 @@ import { CARD_H, CARD_W, GAP, HEAD, PAD } from './constants';
 import type { Board, Item } from './types';
 
 /*
- * Sample board shown by "Örnek odalarla başla" (and used to generate public/seed-board.js).
+ * Sample board loaded by "Örnek odalarla başla" on an empty board.
  * Products, prices and photos were taken from ikea.com.tr on 13 November 2026; they are mock data.
  */
 
