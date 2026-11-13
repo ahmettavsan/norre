@@ -2,6 +2,7 @@ import type { Tool } from '../domain/types';
 import { setTool, tidyAll, toggleSummary } from '../store/actions';
 import { useAppStore } from '../store/appStore';
 import { AccountMenu } from './AccountMenu';
+import { HomeIcon } from './icons';
 
 function ToolButton({
   tool,
@@ -46,19 +47,7 @@ export function Topbar() {
   return (
     <header className="topbar">
       <div className="tb-left">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M5 9.5V20h14V9.5" />
-          <path d="M9.5 20v-5.5h5V20" />
-        </svg>
+        <HomeIcon />
         <span className="title">norre</span>
         <SaveStatus />
       </div>

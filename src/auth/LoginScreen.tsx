@@ -1,4 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
+import kivik from '../assets/ikea/49440597.jpg';
+import lack from '../assets/ikea/90449905.jpg';
+import poang from '../assets/ikea/29502039.jpg';
+import { DeliveryIcon, HomeIcon, StatusIcon } from '../components/icons';
+import { CHIPS, DELIV_SHORT, STATUS } from '../domain/constants';
+import { fmt } from '../domain/format';
 import { Toast } from '../components/Toast';
 import {
   authErrorMessage,
@@ -32,14 +38,78 @@ const GoogleMark = () => (
   </svg>
 );
 
-function AuthCard({ title, children }: { title: string; children: ReactNode }) {
+const SWOOSH = 'M2 9 C 40 3, 90 12, 130 6 S 185 4, 198 8';
+
+/** A few cards from a sample board around the form, drawn exactly like the cards on the board. */
+function SceneCards() {
+  const cards = [
+    { img: kivik, name: "KIVIK 3'lü kanepe", price: 27999, status: 'looking' as const },
+    { img: poang, name: 'POÄNG sallanan koltuk', price: 11199, status: 'bought' as const },
+    { img: lack, name: 'LACK orta sehpa', price: 1299, status: 'todo' as const },
+  ];
+  return (
+    <div className="auth-cards" aria-hidden="true">
+      {cards.map((c) => (
+        <div
+          key={c.name}
+          className={`tag has-img s-${c.status} d-${c.status === 'bought' ? 'delivered' : 'none'}`}
+        >
+          <div className="t-img">
+            <img src={c.img} alt="" draggable={false} />
+          </div>
+          <div className="t-name">{c.name}</div>
+          <div className="t-price">{fmt(c.price)}</div>
+          <div className="t-foot">
+            <span className="pill-btn" data-act="status">
+              <StatusIcon status={c.status} />
+              {STATUS[c.status]}
+            </span>
+            {c.status === 'bought' && (
+              <span className="pill-btn dv-delivered">
+                <DeliveryIcon delivery="delivered" />
+                {DELIV_SHORT.delivered}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The frame of the sign-in screens: the form sits on the whiteboard like a room, with its title written
+ * by hand and underlined in a room colour, and a few cards from a sample board around it.
+ */
+export function AuthFrame({
+  title,
+  color = CHIPS[0],
+  cards = false,
+  children,
+}: {
+  title: string;
+  color?: string;
+  cards?: boolean;
+  children: ReactNode;
+}) {
   return (
     <main className="auth">
-      <div className="auth-card">
-        <div className="auth-brand">norre</div>
-        <p className="auth-tag">Yeni evin için alınacakları oda oda planla</p>
-        <h1>{title}</h1>
-        {children}
+      <div className="auth-top">
+        <HomeIcon />
+        <span className="title">norre</span>
+      </div>
+      <div className="auth-scene">
+        {cards && <SceneCards />}
+        <section className="auth-room" style={{ '--chip': color } as CSSProperties}>
+          <h1 className="auth-title">
+            {title}
+            <svg className="swoosh" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
+              <path d={SWOOSH} />
+            </svg>
+          </h1>
+          <p className="auth-tag">Yeni evin için alınacakları oda oda planla</p>
+          {children}
+        </section>
       </div>
       <Toast />
     </main>
@@ -100,9 +170,11 @@ export function LoginScreen() {
     });
 
   const title = mode === 'signIn' ? 'Giriş yap' : mode === 'signUp' ? 'Hesap oluştur' : 'Şifreni yenile';
+  // Each step underlines its title in another room colour, like rooms on the board.
+  const color = mode === 'signIn' ? CHIPS[0] : mode === 'signUp' ? CHIPS[1] : CHIPS[2];
 
   return (
-    <AuthCard title={title}>
+    <AuthFrame title={title} color={color} cards>
       {mode !== 'forgot' && (
         <>
           <button type="button" className="btn auth-google" onClick={google} disabled={busy}>
@@ -174,7 +246,7 @@ export function LoginScreen() {
           </>
         )}
       </p>
-    </AuthCard>
+    </AuthFrame>
   );
 }
 
@@ -195,7 +267,7 @@ export function NewPasswordScreen() {
   };
 
   return (
-    <AuthCard title="Yeni şifreni belirle">
+    <AuthFrame title="Yeni şifre" color={CHIPS[3]}>
       <form onSubmit={onSubmit}>
         <label className="field">
           <span>Yeni şifre</span>
@@ -218,6 +290,6 @@ export function NewPasswordScreen() {
           Şifreyi kaydet
         </button>
       </form>
-    </AuthCard>
+    </AuthFrame>
   );
 }

@@ -1847,6 +1847,8 @@ textarea.input {
 }
 
 /* ---------- sign in ---------- */
+/* The form sits on the whiteboard like a room: dashed frame, handwritten title underlined in a room
+   colour, and a few real-looking cards from a sample board around it. */
 .auth {
   flex: 1;
   position: relative;
@@ -1854,33 +1856,94 @@ textarea.input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 24px 16px;
+  padding: 72px 16px 32px;
   overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--canvas);
 }
-.auth-card {
+.auth-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 52px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.auth-top .title {
+  /* The top bar hides the name on phones to make room for its tools; here there is room. */
+  display: inline;
+}
+.auth-top svg {
+  width: 20px;
+  height: 20px;
+  color: var(--ink-2);
+}
+.auth-scene {
+  position: relative;
   width: 100%;
-  max-width: 360px;
-  padding: 32px 28px 24px;
-  border-radius: 16px;
-  background: var(--chrome);
-  box-shadow: var(--pop-shadow);
+  max-width: 420px;
 }
-.auth-brand {
-  font-family: 'Silkscreen', ui-monospace, monospace;
-  font-size: 28px;
+.auth-room {
+  position: relative;
+  z-index: 1;
+  padding: 28px 28px 24px;
+  border: 1.5px dashed var(--frame);
+  border-radius: 22px;
+  background: var(--canvas);
+}
+.auth-title {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  padding: 0 8px 8px 2px;
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 44px;
   line-height: 1;
   color: var(--ink);
 }
 .auth-tag {
-  margin: 8px 0 0;
-  font-size: 13px;
+  margin: 8px 0 20px;
+  font-family: var(--hand);
+  font-size: 22px;
+  line-height: 1.1;
   color: var(--ink-2);
 }
-.auth h1 {
-  margin: 28px 0 16px;
-  font-size: 18px;
-  font-weight: 500;
+.auth-wait {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 28px;
+  color: var(--ink-2);
+}
+.auth-cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.auth-cards .tag {
+  z-index: 0;
+}
+.auth-cards .tag:nth-child(1) {
+  left: -244px;
+  top: 32px;
+  transform: rotate(-5deg);
+}
+.auth-cards .tag:nth-child(2) {
+  right: -252px;
+  top: 96px;
+  transform: rotate(4deg);
+}
+.auth-cards .tag:nth-child(3) {
+  right: -212px;
+  bottom: -8px;
+  transform: rotate(-3deg);
+}
+@media (max-width: 1000px) {
+  .auth-cards {
+    display: none;
+  }
 }
 .auth-google {
   display: flex;

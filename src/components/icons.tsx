@@ -174,3 +174,19 @@ export const TrashIcon = () => (
     <path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 13h10l1-13M10 11v5.5M14 11v5.5" />
   </svg>
 );
+
+export const HomeIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M3 10.5 12 3l9 7.5" />
+    <path d="M5 9.5V20h14V9.5" />
+    <path d="M9.5 20v-5.5h5V20" />
+  </svg>
+);

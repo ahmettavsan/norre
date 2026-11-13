@@ -1,6 +1,8 @@
-import { LoginScreen, NewPasswordScreen } from './auth/LoginScreen';
+import { AuthFrame, LoginScreen, NewPasswordScreen } from './auth/LoginScreen';
 import { Canvas } from './canvas/Canvas';
+import { HomeIcon } from './components/icons';
 import { Topbar } from './components/Topbar';
+import { CHIPS } from './domain/constants';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useAppStore } from './store/appStore';
 import { openBoard, signOut } from './store/session';
@@ -18,29 +20,28 @@ function Board() {
 function Waiting({ text }: { text?: string }) {
   return (
     <main className="auth">
-      <div className="auth-brand">norre</div>
-      {text && <p className="auth-tag">{text}</p>}
+      <div className="auth-top">
+        <HomeIcon />
+        <span className="title">norre</span>
+      </div>
+      {text && <p className="auth-wait">{text}</p>}
     </main>
   );
 }
 
 function BoardError() {
   return (
-    <main className="auth">
-      <div className="auth-card">
-        <div className="auth-brand">norre</div>
-        <h1>Panon açılamadı</h1>
-        <p className="auth-tag">Sunucuya ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.</p>
-        <button type="button" className="btn primary auth-submit" onClick={() => void openBoard()}>
-          Tekrar dene
+    <AuthFrame title="Panon açılamadı" color={CHIPS[6]}>
+      <p className="auth-msg">Sunucuya ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.</p>
+      <button type="button" className="btn primary auth-submit" onClick={() => void openBoard()}>
+        Tekrar dene
+      </button>
+      <p className="auth-switch">
+        <button type="button" className="auth-link" onClick={() => void signOut()}>
+          Çıkış yap
         </button>
-        <p className="auth-switch">
-          <button type="button" className="auth-link" onClick={() => void signOut()}>
-            Çıkış yap
-          </button>
-        </p>
-      </div>
-    </main>
+      </p>
+    </AuthFrame>
   );
 }
 
