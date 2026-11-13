@@ -209,6 +209,14 @@ button {
   justify-content: flex-end;
   gap: 2px;
 }
+.tb-save {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  margin-left: 6px;
+  padding: 0 14px;
+  font-size: 13px;
+}
 .tbtn {
   border: 0;
   background: transparent;
@@ -1630,6 +1638,64 @@ textarea.input {
   }
 }
 @media (max-width: 640px) {
+  /* The filter turns into one row of chips that scrolls sideways; group titles become thin dividers. */
+  .fpanel {
+    top: 8px;
+    left: 0;
+    right: 0;
+    width: auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .fp-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    pointer-events: auto;
+    /* Fade the right edge so it shows there is more to scroll to. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+  .fp-body::-webkit-scrollbar {
+    display: none;
+  }
+  .fp-group {
+    flex: none;
+    width: 1px;
+    height: 20px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+    background: var(--hair);
+  }
+  .fp-opt,
+  .fp-hide {
+    flex: none;
+    gap: 8px;
+    margin: 0;
+    padding: 6px 12px 6px 8px;
+    border-radius: 16px;
+    background: var(--chrome);
+    box-shadow:
+      inset 0 0 0 1px var(--hair),
+      0 1px 2px rgba(0, 0, 0, 0.06);
+    font-size: 13px;
+  }
+  .fp-opt:has(input:checked) {
+    box-shadow: inset 0 0 0 1.5px var(--ink);
+  }
+  .fp-lbl {
+    flex: none;
+  }
+  .fp-n {
+    min-width: 0;
+  }
   .drawer {
     top: auto;
     left: 0;
@@ -1911,12 +1977,6 @@ textarea.input {
   line-height: 1.1;
   color: var(--ink-2);
 }
-.auth-wait {
-  margin: 0;
-  font-family: var(--hand);
-  font-size: 28px;
-  color: var(--ink-2);
-}
 .auth-cards {
   position: absolute;
   inset: 0;
@@ -2001,6 +2061,17 @@ textarea.input {
 .auth-msg.error {
   color: var(--danger);
 }
+.auth-msg p {
+  margin: 0;
+}
+.input.invalid {
+  box-shadow: inset 0 0 0 1.5px var(--danger);
+}
+.input.invalid:focus {
+  box-shadow:
+    inset 0 0 0 1.5px var(--danger),
+    0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent);
+}
 .auth-submit {
   width: 100%;
   height: 40px;
@@ -2015,4 +2086,46 @@ textarea.input {
   font-size: 13px;
   color: var(--ink-2);
   text-align: center;
+}
+.auth-back {
+  margin-top: 8px;
+}
+
+/* ---------- loading spinner ---------- */
+.spinner {
+  display: inline-grid;
+  flex: none;
+  grid-template: repeat(3, var(--px)) / repeat(3, var(--px));
+  gap: calc(var(--px) / 2);
+  vertical-align: middle;
+}
+.spinner i {
+  background: currentColor;
+  opacity: 0.2;
+  animation: spinner-step 0.8s steps(1, end) infinite;
+}
+@keyframes spinner-step {
+  0% {
+    opacity: 1;
+  }
+  12.5% {
+    opacity: 0.6;
+  }
+  25% {
+    opacity: 0.35;
+  }
+  37.5% {
+    opacity: 0.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner i {
+    animation-duration: 2.4s;
+  }
+}
+.auth-wait {
+  color: var(--ink);
+}
+.auth-submit .spinner {
+  margin-right: 8px;
 }

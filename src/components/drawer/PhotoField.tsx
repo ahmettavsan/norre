@@ -4,6 +4,7 @@ import type { Item } from '../../domain/types';
 import { attachPhoto, removePhoto } from '../../store/actions';
 import { useAppStore } from '../../store/appStore';
 import { CameraIcon } from '../icons';
+import { Spinner } from '../Spinner';
 
 export function PhotoField({ id, item }: { id: string; item: Item }) {
   const uploading = useAppStore((s) => s.uploading === id);
@@ -28,7 +29,7 @@ export function PhotoField({ id, item }: { id: string; item: Item }) {
   if (uploading) {
     return (
       <div className="photo-drop">
-        <CameraIcon />
+        <Spinner label="Fotoğraf yükleniyor" />
         Fotoğraf yükleniyor…
       </div>
     );

@@ -447,7 +447,8 @@ export function useCanvasGestures(ref: RefObject<HTMLElement | null>): void {
     }
 
     function onWheel(e: WheelEvent) {
-      if ((e.target as Element).closest('.drawer')) return;
+      // The inspector and the filter row (sideways on phones) scroll themselves.
+      if ((e.target as Element).closest('.drawer,.fpanel')) return;
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         const r = vp!.getBoundingClientRect();

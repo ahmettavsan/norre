@@ -4,9 +4,12 @@ import { supabase } from '../lib/supabase';
 import { toast } from './actions';
 import { getState, setState, useAppStore } from './appStore';
 import { fetchBoard, resetCloud, storeBoard } from './cloud';
-import { clearLocalBoard, takeLocalBoard } from './persistence';
+import { clearLocalBoard, takeLocalBoard, writeLocalBoard } from './persistence';
 
-/* Signing in and out, loading the user's board and saving it while they work. */
+/*
+ * Signing in and out, loading the user's board and saving it while they work. Without an account the
+ * board is kept in this browser; signing up moves it into the new account.
+ */
 
 /** Where links in auth emails and the Google sign-in come back to: this page, without its query. */
 const returnUrl = () => window.location.origin + window.location.pathname;
@@ -54,10 +57,31 @@ export async function flushSave(): Promise<void> {
   await saving;
 }
 
-// Save the board whenever it changes after it has been loaded.
+/* ---------- saving without an account ---------- */
+
+const LOCAL_DELAY = 500;
+let localTimer: ReturnType<typeof setTimeout> | undefined;
+let localDirty = false;
+
+function scheduleLocalSave(): void {
+  localDirty = true;
+  clearTimeout(localTimer);
+  localTimer = setTimeout(flushLocalSave, LOCAL_DELAY);
+}
+
+function flushLocalSave(): void {
+  clearTimeout(localTimer);
+  if (!localDirty) return;
+  localDirty = false;
+  if (!writeLocalBoard(getState().board))
+    toast('Bu tarayıcıda yer kalmadı. Panonu kaybetmemek için kayıt ol.');
+}
+
+// Save the board whenever it changes after it has been loaded: to the account, or to this browser.
 useAppStore.subscribe((s, prev) => {
-  if (s.board !== prev.board && s.boardStatus === 'ready' && prev.boardStatus === 'ready' && s.user)
-    scheduleSave();
+  if (s.board === prev.board || s.boardStatus !== 'ready' || prev.boardStatus !== 'ready') return;
+  if (s.user) scheduleSave();
+  else if (s.authStatus === 'signedOut' && prev.authStatus === 'signedOut') scheduleLocalSave();
 });
 
 if (typeof window !== 'undefined') {
@@ -65,12 +89,15 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', (e) => {
     if (dirty || saving) e.preventDefault();
   });
-  window.addEventListener('pagehide', () => void flushSave());
+  window.addEventListener('pagehide', () => {
+    flushLocalSave();
+    void flushSave();
+  });
 }
 
 /* ---------- loading ---------- */
 
-/** Opens the signed-in user's board. On their first sign-in, the board this browser kept comes along. */
+/** Opens the signed-in user's board. On their first sign-in, the board kept in this browser comes along. */
 export async function openBoard(): Promise<void> {
   const { user } = getState();
   if (!user) return;
@@ -97,13 +124,13 @@ export async function openBoard(): Promise<void> {
 
 /* ---------- auth ---------- */
 
-/** Everything the previous user had open, cleared so the next one starts fresh. */
+/** Everything the previous user had open, cleared so the board kept in this browser starts fresh. */
 const signedOutState = {
   user: null,
+  authScreen: null,
   recovery: false,
-  boardStatus: 'idle',
+  boardStatus: 'ready',
   saveStatus: 'saved',
-  board: emptyBoard(),
   view: { x: 40, y: 40, k: 1 },
   tool: 'select',
   filter: 'all',
@@ -122,12 +149,14 @@ function applySession(session: Session | null): void {
   if (!session) {
     resetCloud();
     dirty = false;
-    setState({ ...signedOutState, authStatus: 'signedOut' });
+    flushLocalSave();
+    setState({ ...signedOutState, board: takeLocalBoard() || emptyBoard(), authStatus: 'signedOut' });
     return;
   }
   const user = { id: session.user.id, email: session.user.email || '' };
   if (prev?.id === user.id) return;
-  setState({ authStatus: 'signedIn', user });
+  flushLocalSave(); // so the board made without an account is complete when it moves into the account
+  setState({ authStatus: 'signedIn', user, authScreen: null });
   void openBoard();
 }
 

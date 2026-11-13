@@ -30,9 +30,11 @@ export interface AppState {
   /** 'loading' until Supabase has told us whether someone is signed in. */
   authStatus: 'loading' | 'signedOut' | 'signedIn';
   user: User | null;
+  /** The sign-in screen, opened over the board by someone using the app without an account. */
+  authScreen: 'signIn' | 'signUp' | null;
   /** The user came back from a password reset email and has to choose a new password. */
   recovery: boolean;
-  /** The signed-in user's board: being fetched, on screen, or failed to load. */
+  /** The board: being fetched from the account, on screen, or failed to load. */
   boardStatus: 'idle' | 'loading' | 'ready' | 'error';
   saveStatus: 'saved' | 'saving' | 'error';
   board: Board;
@@ -71,6 +73,7 @@ const prefs = readPrefs();
 export const useAppStore = create<AppState>()(() => ({
   authStatus: 'loading',
   user: null,
+  authScreen: null,
   recovery: false,
   boardStatus: 'idle',
   saveStatus: 'saved',

@@ -3,11 +3,11 @@ import { roomAt } from '../domain/geometry';
 import type { Board, Item } from '../domain/types';
 
 /*
- * Shape checks and migrations for saved boards, the board this browser kept before accounts existed,
- * and small per-browser preferences. The account's board itself is saved by store/cloud.ts.
+ * Shape checks and migrations for saved boards, the board of someone using the app without an account
+ * (kept in this browser), and small per-browser preferences. An account's board is saved by store/cloud.ts.
  */
 
-/** Where this browser kept the board before accounts (under both of the app's names). */
+/** Where this browser keeps the board without an account; the first key is written, both are read. */
 const LOCAL_KEYS = ['norre-board-v1', 'yuvamiz-board-v1'];
 const PREF_HIDE_UNMATCHED = 'norre-hide';
 
@@ -56,7 +56,7 @@ function toBoard(d: RawBoard): Board {
   return board;
 }
 
-/** The board this browser kept before accounts existed, if any, to bring into the user's account. */
+/** The board kept in this browser without an account, if any. */
 export function takeLocalBoard(): Board | null {
   try {
     const raw = LOCAL_KEYS.map((k) => localStorage.getItem(k)).find(Boolean);
@@ -66,7 +66,17 @@ export function takeLocalBoard(): Board | null {
   }
 }
 
-/** Forgets the pre-account board once it is safely in an account. */
+/** Keeps the board in this browser. False when it could not be written, usually because storage is full. */
+export function writeLocalBoard(board: Board): boolean {
+  try {
+    localStorage.setItem(LOCAL_KEYS[0], JSON.stringify(board));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Forgets the browser's board once it is safely in an account. */
 export function clearLocalBoard(): void {
   try {
     for (const k of LOCAL_KEYS) localStorage.removeItem(k);

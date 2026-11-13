@@ -2,7 +2,7 @@
 
 Yeni eve taşınırken ya da evlenirken alınacak eşyaları oda oda planlamak için Freeform tarzı bir pano. Odaları çerçeve olarak çizer, eşyaları kart olarak içine bırakırsın; neyin alındığını, neyin yolda olduğunu ve ne kadar harcadığını tek bakışta görürsün.
 
-Herkes Google ya da e-posta/şifreyle giriş yapıp kendi panosunu kullanır. React + TypeScript + Vite ile yazılmıştır; hesaplar ve veriler Supabase'te durur.
+Uygulama kayıt olmadan açılır; pano o zaman bu tarayıcıda saklanır. Panoyu kalıcı olarak saklamak ve her cihazdan açmak için Google ya da e-posta/şifreyle kayıt olunur. React + TypeScript + Vite ile yazılmıştır; hesaplar ve veriler Supabase'te durur.
 
 ## Çalıştırma
 
@@ -54,7 +54,7 @@ Hesaplar Supabase Auth'ta, panolar Supabase veritabanında durur (`supabase/sche
 
 Üst çubuktaki noktanın rengi kaydı gösterir: yeşil kaydedildi, gri kaydediliyor, kırmızı kaydedilemedi (birkaç saniye sonra yeniden denenir).
 
-Hesaplardan önce bu tarayıcıda tutulan bir pano varsa, ilk girişte hesaba aktarılır.
+Kayıt olmadan bu tarayıcıda hazırlanan pano, ilk girişte hesaba taşınır (hesapta zaten bir pano varsa hesaptaki açılır, tarayıcıdaki kalır).
 
 ## Supabase kurulumu
 

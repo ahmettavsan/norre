@@ -29,6 +29,10 @@ export function closeDrawer(): void {
   setState({ drawer: null });
 }
 
+/** Opens the sign-in screen over the board (for someone using the app without an account). */
+export const openAuth = (mode: 'signIn' | 'signUp') => setState({ authScreen: mode });
+export const closeAuth = () => setState({ authScreen: null });
+
 export function toggleSummary(): void {
   if (getState().drawer?.type === 'summary') closeDrawer();
   else openDrawer('summary');

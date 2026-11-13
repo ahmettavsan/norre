@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { clearLocalBoard, normalizeBoard, takeLocalBoard } from './persistence';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createItem, emptyBoard } from '../domain/board';
+import { produce } from 'immer';
+import { clearLocalBoard, normalizeBoard, takeLocalBoard, writeLocalBoard } from './persistence';
 
 describe('saved boards', () => {
   it('converts the Turkish values of older boards', () => {
@@ -46,7 +48,7 @@ describe('saved boards', () => {
   });
 });
 
-describe('the board this browser kept before accounts', () => {
+describe('the board kept in this browser without an account', () => {
   beforeEach(() => localStorage.clear());
 
   it('is found under the old Yuvamız key too, and can be forgotten', () => {
@@ -58,5 +60,21 @@ describe('the board this browser kept before accounts', () => {
     expect(takeLocalBoard()!.items.a.name).toBe('Koltuk');
     clearLocalBoard();
     expect(takeLocalBoard()).toBeNull();
+  });
+
+  it('comes back as it was written', () => {
+    const board = produce(emptyBoard(), (d) => {
+      createItem(d, 20, 20, { name: 'Halı' });
+    });
+    expect(writeLocalBoard(board)).toBe(true);
+    expect(takeLocalBoard()).toEqual(board);
+  });
+
+  it('reports when the browser has no room left', () => {
+    const full = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    expect(writeLocalBoard(emptyBoard())).toBe(false);
+    full.mockRestore();
   });
 });

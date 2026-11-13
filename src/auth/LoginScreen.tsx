@@ -5,7 +5,9 @@ import poang from '../assets/ikea/29502039.jpg';
 import { DeliveryIcon, HomeIcon, StatusIcon } from '../components/icons';
 import { CHIPS, DELIV_SHORT, STATUS } from '../domain/constants';
 import { fmt } from '../domain/format';
+import { Spinner } from '../components/Spinner';
 import { Toast } from '../components/Toast';
+import { closeAuth } from '../store/actions';
 import {
   authErrorMessage,
   sendPasswordReset,
@@ -37,6 +39,36 @@ const GoogleMark = () => (
     />
   </svg>
 );
+
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** What is wrong with the email field, or '' when it is fine. */
+function emailProblem(email: string): string {
+  const v = email.trim();
+  if (!v) return 'E-posta adresini yaz.';
+  if (!EMAIL_FORMAT.test(v)) return 'Geçerli bir e-posta adresi gir.';
+  return '';
+}
+
+/** What is wrong with the password field; a new password needs at least 6 characters (Supabase's minimum). */
+function passwordProblem(password: string, isNew: boolean): string {
+  if (!password) return isNew ? 'Bir şifre belirle.' : 'Şifreni yaz.';
+  if (isNew && password.length < 6) return 'Şifre en az 6 karakter olmalı.';
+  return '';
+}
+
+/** The form's messages under the fields: what to fix in the fields, otherwise what the server said. */
+function FormError({ problems, error }: { problems: string[]; error: string }) {
+  const lines = problems.length ? problems : error ? [error] : [];
+  if (!lines.length) return null;
+  return (
+    <div className="auth-msg error" role="alert">
+      {lines.map((line) => (
+        <p key={line}>{line}</p>
+      ))}
+    </div>
+  );
+}
 
 const SWOOSH = 'M2 9 C 40 3, 90 12, 130 6 S 185 4, 198 8';
 
@@ -83,11 +115,13 @@ function SceneCards() {
  */
 export function AuthFrame({
   title,
+  tagline = 'Yeni evin için alınacakları oda oda planla',
   color = CHIPS[0],
   cards = false,
   children,
 }: {
   title: string;
+  tagline?: string;
   color?: string;
   cards?: boolean;
   children: ReactNode;
@@ -107,7 +141,7 @@ export function AuthFrame({
               <path d={SWOOSH} />
             </svg>
           </h1>
-          <p className="auth-tag">Yeni evin için alınacakları oda oda planla</p>
+          <p className="auth-tag">{tagline}</p>
           {children}
         </section>
       </div>
@@ -116,23 +150,30 @@ export function AuthFrame({
   );
 }
 
-/** Sign in, sign up and "forgot password", with Google or email and password. */
-export function LoginScreen() {
-  const [mode, setMode] = useState<Mode>('signIn');
+/** Sign in, sign up and "forgot password", with Google or email and password, opened over the board. */
+export function LoginScreen({ initial }: { initial: 'signIn' | 'signUp' }) {
+  const [mode, setMode] = useState<Mode>(initial);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
+  // Which button is waiting for Supabase, if any.
+  const [busy, setBusy] = useState<'' | 'google' | 'form'>('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  // Fields are checked once the form has been sent, and then again as they are corrected.
+  const [checked, setChecked] = useState(false);
+
+  const emailError = checked ? emailProblem(email) : '';
+  const passwordError = checked && mode !== 'forgot' ? passwordProblem(password, mode === 'signUp') : '';
 
   const go = (m: Mode) => {
     setMode(m);
     setError('');
     setInfo('');
+    setChecked(false);
   };
 
-  const run = async (task: () => Promise<void>) => {
-    setBusy(true);
+  const run = async (by: 'google' | 'form', task: () => Promise<void>) => {
+    setBusy(by);
     setError('');
     setInfo('');
     try {
@@ -140,13 +181,22 @@ export function LoginScreen() {
     } catch {
       setError('Sunucuya ulaşılamadı. İnternet bağlantını kontrol et.');
     } finally {
-      setBusy(false);
+      setBusy('');
     }
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    void run(async () => {
+    setChecked(true);
+    if (emailProblem(email) || (mode !== 'forgot' && passwordProblem(password, mode === 'signUp'))) {
+      // Put the cursor in the first field to fix.
+      const field = emailProblem(email) ? 'email' : 'password';
+      e.currentTarget.querySelector<HTMLInputElement>(`input[type=${field}]`)?.focus();
+      setError('');
+      setInfo('');
+      return;
+    }
+    void run('form', async () => {
       if (mode === 'signIn') {
         const err = await signInWithEmail(email.trim(), password);
         if (err) setError(authErrorMessage(err));
@@ -164,7 +214,7 @@ export function LoginScreen() {
   };
 
   const google = () =>
-    void run(async () => {
+    void run('google', async () => {
       const err = await signInWithGoogle();
       if (err) setError(typeof err === 'string' ? err : authErrorMessage(err));
     });
@@ -174,21 +224,27 @@ export function LoginScreen() {
   const color = mode === 'signIn' ? CHIPS[0] : mode === 'signUp' ? CHIPS[1] : CHIPS[2];
 
   return (
-    <AuthFrame title={title} color={color} cards>
+    <AuthFrame
+      title={title}
+      tagline={mode === 'signUp' ? 'Panon hesabına taşınır, her cihazdan açabilirsin' : undefined}
+      color={color}
+      cards
+    >
       {mode !== 'forgot' && (
         <>
-          <button type="button" className="btn auth-google" onClick={google} disabled={busy}>
-            <GoogleMark />
+          <button type="button" className="btn auth-google" onClick={google} disabled={!!busy}>
+            {busy === 'google' ? <Spinner px={3} /> : <GoogleMark />}
             Google ile devam et
           </button>
           <div className="auth-or">ya da</div>
         </>
       )}
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         <label className="field">
           <span>E-posta</span>
           <input
-            className="input"
+            className={emailError ? 'input invalid' : 'input'}
+            aria-invalid={!!emailError}
             type="email"
             autoComplete="email"
             required
@@ -200,7 +256,8 @@ export function LoginScreen() {
           <label className="field">
             <span>Şifre</span>
             <input
-              className="input"
+              className={passwordError ? 'input invalid' : 'input'}
+              aria-invalid={!!passwordError}
               type="password"
               autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
               minLength={6}
@@ -215,17 +272,14 @@ export function LoginScreen() {
             Şifremi unuttum
           </button>
         )}
-        {error && (
-          <p className="auth-msg error" role="alert">
-            {error}
-          </p>
-        )}
+        <FormError problems={[emailError, passwordError].filter(Boolean)} error={error} />
         {info && (
           <p className="auth-msg" role="status">
             {info}
           </p>
         )}
-        <button type="submit" className="btn primary auth-submit" disabled={busy}>
+        <button type="submit" className="btn primary auth-submit" disabled={!!busy}>
+          {busy === 'form' && <Spinner px={3} />}
           {mode === 'signIn' ? 'Giriş yap' : mode === 'signUp' ? 'Hesap oluştur' : 'Bağlantı gönder'}
         </button>
       </form>
@@ -246,6 +300,11 @@ export function LoginScreen() {
           </>
         )}
       </p>
+      <p className="auth-switch auth-back">
+        <button type="button" className="auth-link" onClick={closeAuth}>
+          Kayıt olmadan devam et
+        </button>
+      </p>
     </AuthFrame>
   );
 }
@@ -255,9 +314,17 @@ export function NewPasswordScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [checked, setChecked] = useState(false);
+  const passwordError = checked ? passwordProblem(password, true) : '';
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setChecked(true);
+    if (passwordProblem(password, true)) {
+      e.currentTarget.querySelector('input')?.focus();
+      setError('');
+      return;
+    }
     setBusy(true);
     setError('');
     setNewPassword(password)
@@ -268,11 +335,12 @@ export function NewPasswordScreen() {
 
   return (
     <AuthFrame title="Yeni şifre" color={CHIPS[3]}>
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         <label className="field">
           <span>Yeni şifre</span>
           <input
-            className="input"
+            className={passwordError ? 'input invalid' : 'input'}
+            aria-invalid={!!passwordError}
             type="password"
             autoComplete="new-password"
             minLength={6}
@@ -281,12 +349,9 @@ export function NewPasswordScreen() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
-        {error && (
-          <p className="auth-msg error" role="alert">
-            {error}
-          </p>
-        )}
+        <FormError problems={passwordError ? [passwordError] : []} error={error} />
         <button type="submit" className="btn primary auth-submit" disabled={busy}>
+          {busy && <Spinner px={3} />}
           Şifreyi kaydet
         </button>
       </form>

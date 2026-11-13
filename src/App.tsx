@@ -1,6 +1,7 @@
 import { AuthFrame, LoginScreen, NewPasswordScreen } from './auth/LoginScreen';
 import { Canvas } from './canvas/Canvas';
 import { HomeIcon } from './components/icons';
+import { Spinner } from './components/Spinner';
 import { Topbar } from './components/Topbar';
 import { CHIPS } from './domain/constants';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
@@ -17,14 +18,16 @@ function Board() {
   );
 }
 
-function Waiting({ text }: { text?: string }) {
+function Waiting({ label }: { label?: string }) {
   return (
     <main className="auth">
       <div className="auth-top">
         <HomeIcon />
         <span className="title">norre</span>
       </div>
-      {text && <p className="auth-wait">{text}</p>}
+      <div className="auth-wait">
+        <Spinner px={8} label={label} />
+      </div>
     </main>
   );
 }
@@ -47,13 +50,14 @@ function BoardError() {
 
 export function App() {
   const authStatus = useAppStore((s) => s.authStatus);
+  const authScreen = useAppStore((s) => s.authScreen);
   const recovery = useAppStore((s) => s.recovery);
   const boardStatus = useAppStore((s) => s.boardStatus);
 
   if (authStatus === 'loading') return <Waiting />;
-  if (authStatus === 'signedOut') return <LoginScreen />;
   if (recovery) return <NewPasswordScreen />;
+  if (authStatus === 'signedOut' && authScreen) return <LoginScreen initial={authScreen} />;
   if (boardStatus === 'error') return <BoardError />;
-  if (boardStatus !== 'ready') return <Waiting text="Panon açılıyor…" />;
+  if (boardStatus !== 'ready') return <Waiting label="Panon açılıyor" />;
   return <Board />;
 }

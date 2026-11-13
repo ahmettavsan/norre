@@ -1,8 +1,9 @@
 import type { Tool } from '../domain/types';
-import { setTool, tidyAll, toggleSummary } from '../store/actions';
+import { openAuth, setTool, tidyAll, toggleSummary } from '../store/actions';
 import { useAppStore } from '../store/appStore';
 import { AccountMenu } from './AccountMenu';
 import { HomeIcon } from './icons';
+import { Spinner } from './Spinner';
 
 function ToolButton({
   tool,
@@ -37,10 +38,29 @@ const SAVE_LABEL = {
   error: 'Kaydedilemedi, tekrar denenecek',
 };
 
-/** A small dot next to the name: green once the board is saved, grey while saving, red when it failed. */
+/** A small dot next to the name: green once the board is saved, a spinner while saving, red when it failed. */
 function SaveStatus() {
   const status = useAppStore((s) => s.saveStatus);
+  const signedIn = useAppStore((s) => !!s.user);
+  if (!signedIn) return null;
+  if (status === 'saving') return <Spinner px={2} label={SAVE_LABEL.saving} />;
   return <span className={'sync ' + status} title={SAVE_LABEL[status]} aria-label={SAVE_LABEL[status]} />;
+}
+
+/** The account menu, or for someone without an account the way to sign up and keep their board. */
+function Account() {
+  const signedIn = useAppStore((s) => !!s.user);
+  if (signedIn) return <AccountMenu />;
+  return (
+    <button
+      type="button"
+      className="btn primary tb-save"
+      title="Panonu kalıcı olarak kaydetmek için kayıt ol ya da giriş yap"
+      onClick={() => openAuth('signUp')}
+    >
+      Kaydet
+    </button>
+  );
 }
 
 export function Topbar() {
@@ -111,7 +131,7 @@ export function Topbar() {
             <path d="M12 3.5V12l6 6" />
           </svg>
         </button>
-        <AccountMenu />
+        <Account />
       </div>
     </header>
   );
