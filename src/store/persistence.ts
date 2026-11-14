@@ -7,9 +7,9 @@ import type { Board, Item } from '../domain/types';
  * (kept in this browser), and small per-browser preferences. An account's board is saved by store/cloud.ts.
  */
 
-/** Where this browser keeps the board without an account; the first key is written, both are read. */
-const LOCAL_KEYS = ['norre-board-v1', 'yuvamiz-board-v1'];
-const PREF_HIDE_UNMATCHED = 'norre-hide';
+/** Where this browser keeps the board without an account; the first key is written, the app's older names are still read. */
+const LOCAL_KEYS = ['nook-board-v1', 'norre-board-v1', 'yuvamiz-board-v1'];
+const PREF_HIDE_UNMATCHED = 'nook-hide';
 
 interface RawBoard {
   groups?: Board['groups'];

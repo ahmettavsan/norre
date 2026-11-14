@@ -130,7 +130,7 @@ export function AuthFrame({
     <main className="auth">
       <div className="auth-top">
         <HomeIcon />
-        <span className="title">norre</span>
+        <span className="title">nook</span>
       </div>
       <div className="auth-scene">
         {cards && <SceneCards />}

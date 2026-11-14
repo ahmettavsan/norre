@@ -1,6 +1,8 @@
 {
-  "name": "norre – Ev eşyası panosu",
-  "short_name": "norre",
+  "name": "nook – Ev eşyası listesi ve bütçe planlayıcı",
+  "short_name": "nook",
+  "description": "Yeni ev, taşınma ya da çeyiz için alınacak eşyaları oda oda planla. Fiyatları, bütçeni ve teslimatları tek panoda takip et. Kayıt olmadan başla.",
+  "lang": "tr",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

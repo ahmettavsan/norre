@@ -1,4 +1,4 @@
--- norre database. Run once in the Supabase dashboard: SQL Editor → New query → paste → Run.
+-- nook database. Run once in the Supabase dashboard: SQL Editor → New query → paste → Run.
 -- Safe to run again.
 --
 -- Users live in Supabase Auth (auth.users). Every user has one board; its photos are kept in their own

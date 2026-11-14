@@ -47,19 +47,24 @@ function SaveStatus() {
   return <span className={'sync ' + status} title={SAVE_LABEL[status]} aria-label={SAVE_LABEL[status]} />;
 }
 
-/** The account menu, or for someone without an account the way to sign up and keep their board. */
+/** The account menu, or for someone without an account the ways to sign in, or sign up and keep their board. */
 function Account() {
   const signedIn = useAppStore((s) => !!s.user);
   if (signedIn) return <AccountMenu />;
   return (
-    <button
-      type="button"
-      className="btn primary tb-save"
-      title="Panonu kalıcı olarak kaydetmek için kayıt ol ya da giriş yap"
-      onClick={() => openAuth('signUp')}
-    >
-      Kaydet
-    </button>
+    <>
+      <button type="button" className="tbtn tb-signin" onClick={() => openAuth('signIn')}>
+        Giriş yap
+      </button>
+      <button
+        type="button"
+        className="btn primary tb-save"
+        title="Panonu kalıcı olarak kaydetmek için kayıt ol"
+        onClick={() => openAuth('signUp')}
+      >
+        Kaydet
+      </button>
+    </>
   );
 }
 
@@ -68,7 +73,7 @@ export function Topbar() {
     <header className="topbar">
       <div className="tb-left">
         <HomeIcon />
-        <span className="title">norre</span>
+        <span className="title">nook</span>
         <SaveStatus />
       </div>
       <div className="tb-center" role="toolbar" aria-label="Araçlar">

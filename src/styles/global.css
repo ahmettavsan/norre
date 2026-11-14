@@ -209,6 +209,12 @@ button {
   justify-content: flex-end;
   gap: 2px;
 }
+.tb-signin {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
 .tb-save {
   display: inline-flex;
   align-items: center;
@@ -1635,6 +1641,42 @@ textarea.input {
   }
   .statbar .stat.opt {
     display: none;
+  }
+}
+@media (max-width: 480px) {
+  /* Narrow phones: tighter tools and no house icon, so "Giriş yap" and "Kaydet" fit next to them. */
+  .topbar {
+    padding: 0 8px;
+    gap: 4px;
+  }
+  .tb-left {
+    display: none;
+  }
+  .topbar {
+    grid-template-columns: 1fr auto;
+  }
+  .tbtn {
+    min-width: 32px;
+    padding: 0 5px;
+  }
+  .tsep {
+    margin: 0;
+  }
+  .tb-signin {
+    margin-left: 0;
+  }
+  .tb-save {
+    margin-left: 2px;
+    padding: 0 10px;
+  }
+}
+@media (max-width: 359px) {
+  .tsep {
+    display: none;
+  }
+  .tbtn {
+    min-width: 28px;
+    padding: 0 3px;
   }
 }
 @media (max-width: 640px) {

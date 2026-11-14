@@ -1,4 +1,4 @@
-# norre – Ev eşyası panosu
+# nook – Ev eşyası panosu
 
 Yeni eve taşınırken ya da evlenirken alınacak eşyaları oda oda planlamak için Freeform tarzı bir pano. Odaları çerçeve olarak çizer, eşyaları kart olarak içine bırakırsın; neyin alındığını, neyin yolda olduğunu ve ne kadar harcadığını tek bakışta görürsün.
 
